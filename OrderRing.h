@@ -111,12 +111,9 @@ uint32_t OrderRing<MessageType, RingSize>::pushAsManyAsPossible(MessageType mess
 
         uint32_t writePos = RingUtil::GetPos<RING_MASK>(sequence) ;
         data[writePos] = currentMessage ;
-        bitMap.set(writePos) ;
-    }
-    
-    if(0 < pos)
-    {
         RingUtil::FlushData() ;
+
+        bitMap.set(writePos) ;
     }
     
     return pos ;
@@ -136,9 +133,9 @@ bool OrderRing<MessageType, RingSize>::push(MessageType &message)
     uint32_t writePos = RingUtil::GetPos<RING_MASK>(sequence) ;
 
     data[writePos] = message ;
-    bitMap.set(writePos) ;
-
     RingUtil::FlushData() ;
+
+    bitMap.set(writePos) ;
 
     return true ;
 }
@@ -170,9 +167,9 @@ uint32_t OrderRing<MessageType, RingSize>::push(MessageType &message, MessageTyp
     uint32_t writePos = RingUtil::GetPos<RING_MASK>(sequence) ;
 
     data[writePos] = message ;
-    bitMap.set(writePos) ;
-
     RingUtil::FlushData() ;
+    
+    bitMap.set(writePos) ;
 
     return popAsManyAsPossible(popMessage, count) ;
 }
