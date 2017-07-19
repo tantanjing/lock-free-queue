@@ -12,8 +12,10 @@ template<class MessageType, uint32_t RingSize>
 class OrderRing
 {
  public:
-
-    OrderRing(void) {}
+    OrderRing(void) 
+    {
+        CheckPowOfTwo(RingSize) ;
+    }
     
     OrderRing(const std::string name) {}
 
@@ -89,7 +91,6 @@ class OrderRing
     BitMap bitMap ;
 
     MessageType data[RingSize] ;
-
 } ;
 
 

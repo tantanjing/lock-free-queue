@@ -12,7 +12,10 @@ class Ring
 {
  public:
  
-    Ring(void) {}
+    Ring(void)
+    {
+        CheckPowOfTwo(RingSize) ;
+    }
     
     Ring(const std::string name) {}
 
@@ -67,8 +70,7 @@ class Ring
 
     Cursor consumer ;
 
-    MessageType data[RingSize] ;
-
+    MessageType data[RingSize] 
 } ;
 
 

@@ -55,4 +55,35 @@ class RingUtil
  private:    
 } ;
 
+template<uint32_t BitOffset, uint32_t Value>
+class BitCounter
+{
+ public:
+    enum{ bit = (((((uint32_t)0x00000001 << BitOffset) & Value) ? 1 : 0)) + BitCounter<BitOffset - 1, Value>::bit , } ;
+} ;
+
+template<uint32_t Value>
+class BitCounter<0, Value>
+{
+ public:
+    enum{ bit = (((uint32_t)0x00000001 & Value) ? 1 : 0), } ;
+} ;
+
+template<bool checker> 
+class PowOfTwoChecker {} ;
+template<> class PowOfTwoChecker<true> {} ;
+template<> class PowOfTwoChecker<false> {} ;
+
+template<uint32_t Value>
+class IsPowOfTwo
+{
+ public:   
+    IsPowOfTwo(void)
+    {
+        PowOfTwoChecker<true> powOfTwoChecker = PowOfTwoChecker<1 != Value && 1 == BitCounter<31, Value>::bit >() ;
+    }
+} ;
+
+#define CheckPowOfTwo(value) IsPowOfTwo<RingSize> __powOfTwoChecker
+
 }
