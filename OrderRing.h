@@ -259,6 +259,7 @@ uint32_t OrderRing<MessageType, RingSize>::popAsManyAsPossible(MessageType messa
         }
     }
 
+    RingUtil::FlushData() ;
     cursor.current = future ;
 
     return storedCount ;
@@ -292,6 +293,8 @@ bool OrderRing<MessageType, RingSize>::pop(MessageType &message)
 
     message = data[readPos] ;
     bitMap.reset(readPos) ;
+    RingUtil::FlushData() ;
+
     cursor.current = future + 1 ;
 
     return true ;
