@@ -12,12 +12,12 @@ template<class MessageType, uint32_t RingSize>
 class OrderRing
 {
  public:
-    OrderRing(void) 
+    OrderRing(uint32_t startSequenceNumber): cursor(startSequenceNumber)
     {
         CheckPowOfTwo(RingSize) ;
     }
     
-    OrderRing(const std::string name) {}
+    OrderRing(const std::string name, uint32_t startSequenceNumber): cursor(startSequenceNumber) {}
 
     uint32_t pushAsManyAsPossible(MessageType message[], uint32_t count) ;
 
@@ -54,7 +54,7 @@ class OrderRing
     class Cursor
     {
      public:
-        Cursor(void): current(0), future(0) {}
+        Cursor(uint32_t cursor): current(cursor), future(cursor) {}
         volatile uint32_t current ;
         volatile uint32_t future ;
     } CACHE_ALIGNED ;
@@ -191,22 +191,22 @@ uint32_t OrderRing<MessageType, RingSize>::popAsManyAsPossible(MessageType messa
         count = RingSize ;
     }
 
-    for(; future < (current + count); ++future)
+    uint32_t storedCount ;
+    for(storedCount = 0; storedCount < count; ++storedCount)
     {
-        uint32_t readPos = RingUtil::GetPos<RING_MASK>(future) ;
+        uint32_t readPos = RingUtil::GetPos<RING_MASK>(current + storedCount) ;
         if(!bitMap.get(readPos))
         {
             break ;
         }
     }
 
-    uint32_t storedCount = future - current ;
     if(unlikely(0 == storedCount))
     {
         return 0 ;
     }
 
-    if(unlikely(!RingUtil::CAS(&cursor.future, current, future)))
+    if(unlikely(!RingUtil::CAS(&cursor.future, future, future + storedCount)))
     {
         return 0 ;
     }
@@ -260,7 +260,7 @@ uint32_t OrderRing<MessageType, RingSize>::popAsManyAsPossible(MessageType messa
     }
 
     RingUtil::FlushData() ;
-    cursor.current = future ;
+    cursor.current = future + storedCount ;
 
     return storedCount ;
 }

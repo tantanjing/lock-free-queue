@@ -10,9 +10,9 @@ class OrderQueue
 {
  public:
 
-    OrderQueue(void) {}
+    OrderQueue(uint32_t startSequenceNumber = 0): queue(startSequenceNumber) {}
     
-    OrderQueue(const std::string name): queue(name) {}
+    OrderQueue(const std::string name, uint32_t startSequenceNumber = 0): queue(name, startSequenceNumber) {}
 
     inline uint32_t pushAsManyAsPossible(MessageType message[], uint32_t count)
     {
@@ -29,7 +29,7 @@ class OrderQueue
         return queue.push(message) ;
     }
 
-    uint32_t push(MessageType &message, MessageType popMessage[], uint32_t count)
+    inline uint32_t push(MessageType &message, MessageType popMessage[], uint32_t count)
     {
         return queue.push(message, popMessage, count) ;
     }
@@ -51,8 +51,7 @@ class OrderQueue
 
  private:
 
-    OrderRing<MessageType, QueueSize> queue ;
- 
+    OrderRing<MessageType, QueueSize> queue ; 
 } ;
 
 }

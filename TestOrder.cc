@@ -18,11 +18,11 @@ class SequenceUtil
         return __sync_fetch_and_add(&sequence, 1) ;
     }
 
- private:
     static uint32_t sequence ;
+ private:
 } ;
 
-uint32_t SequenceUtil::sequence = 0 ;
+uint32_t SequenceUtil::sequence = 0xFFFFFF00 ;
 
 class Message
 {
@@ -81,8 +81,8 @@ template<class MessageQueue, uint32_t MessageCount>
 class Consumer
 {
  public:
-    Consumer(uint32_t id, uint64_t cycleCount, MessageQueue &queue, uint32_t runType): 
-        id(id), cycleCount(cycleCount), count(0), pthread(0), running(false), queue(queue), runType(runType) 
+    Consumer(uint32_t id, uint64_t cycleCount, MessageQueue &queue, uint32_t runType, uint32_t startSequenceNumber = 0): 
+        id(id), cycleCount(cycleCount), count(0), pthread(0), running(false), queue(queue), runType(runType), startSequenceNumber(startSequenceNumber)
     {
         conMessages = new Message[MessageCount] ;
         conMessageCount = 0 ;
@@ -120,9 +120,10 @@ class Consumer
     
     bool checkMessage(void)
     {
-        for(uint32_t pos = 0; pos < conMessageCount; ++pos)
+        uint32_t start = startSequenceNumber ;
+        for(uint32_t pos = 0; pos < conMessageCount; ++pos, ++start)
         {
-            if(conMessages[pos].getSequence() != pos)
+            if(conMessages[pos].getSequence() != start)
             {
                 printf("Check message failed\n") ;
                 return false;
@@ -167,6 +168,7 @@ class Consumer
             for(uint32_t pos = 0; pos < popCount; ++pos)
             {
                 conMessages[conMessageCount++] = message[pos] ;
+                //printf("Consumer %u consumer sequence=%u, pop-pos=%u, pop-count=%u, total-count=%lu\n", id, message[pos].getSequence(), pos, popCount, count + pos) ;
             }
 
             count += popCount ;
@@ -237,6 +239,7 @@ class Consumer
     
     Message *conMessages ;
     uint32_t conMessageCount ;
+    uint32_t startSequenceNumber ;
 } ;
 
 template<class MessageQueue>
@@ -349,15 +352,17 @@ class Producer
 } ;
 
 //16384
-#define MessageQueueType queue::OrderQueue<Message, 4096>
+
+typedef queue::OrderQueue<Message, 4096> MessageQueueType ;
 
 int main(int argv, char *args[])
 {
     printf("Test order queue\n") ;    
     
+    const uint32_t startSequenceNumber = SequenceUtil::sequence ;
     const uint64_t messageCount = 20000000 ;
     
-    MessageQueueType queue ;
+    MessageQueueType queue(startSequenceNumber) ;
     uint32_t wokerId = 0 ;
     Producer<MessageQueueType > producer(wokerId++, messageCount, queue, 1) ;
     producer.start() ;
@@ -368,7 +373,7 @@ int main(int argv, char *args[])
     Producer<MessageQueueType > producer4(wokerId++, messageCount, queue, 1) ;
     producer4.start() ;
 
-    Consumer<MessageQueueType, 4*messageCount > consumer(wokerId++, 4*messageCount, queue, 2) ;
+    Consumer<MessageQueueType, 4 * messageCount > consumer(wokerId++, 4 * messageCount, queue, 3, startSequenceNumber) ;
     consumer.start() ;
 /*
     Consumer<MessageQueueType > consumer2(wokerId++, 2*(uint64_t)100000000, queue, 1) ;
@@ -391,5 +396,9 @@ int main(int argv, char *args[])
     consumer4.wait() ;
     */
     //producer.start() ;
+        
+    //queue::IsPowOfTwo<512> powOfTwoChecker ;
+    //printf("powOfTwo=%u\n", PowOfTwo<31, 0xFFFFFFF>::bit) ;
+    
     return 0 ;
 }
