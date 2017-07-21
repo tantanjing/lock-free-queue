@@ -70,7 +70,7 @@ class Ring
 
     Cursor consumer ;
 
-    MessageType data[RingSize] 
+    MessageType data[RingSize] ;
 } ;
 
 
